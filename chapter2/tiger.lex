@@ -4,7 +4,7 @@
 #include "tokens.h"
 #include "errormsg.h"
 
-#difine MAX_LENGTH 512
+#define MAX_LENGTH 512
 
 int charPos=1;
 
@@ -30,12 +30,12 @@ static int comment_nest = 0;
 
 void init_string()
 {
-   remain = MAXLENGTH - 1;
+   remain = MAX_LENGTH - 1;
    str_ptr = str;
 }
 
-#define OVER_MEM_ERR printf("%s (max_length: %d)","usage: string out of memrory!",MAX_LENGHT);\
-            exit(1);
+#define OVER_MEM_ERR printf("%s (max_length: %d)", "usage: string out of memrory!" , MAX_LENGTH);\
+       exit(1)
 			
 void append_char_to_string(int ch)
 {
@@ -54,26 +54,33 @@ void append_str_to_string(char *s)
    {
       OVER_MEM_ERR;
    }
-   while((*str_ptr++ = *s++,*s));//拷贝s到string
+   while((*str_ptr++ = *s++,*s));
    remain -= t;
 }
 void end_string()
 {
    if(!remain)
    {
-      OVER_MEM_ERR；
+      OVER_MEM_ERR;
    }
    *str_ptr++ ='\0';
 }	
-
-
 %}
 
 id [A-Za-z][_A-Za-z0-9]*
 digits [0-9]+
-%start COMMENT STRING
+ws[ \t]+
+%x comment
+%x string
+%s nocomment
+
 %%
-" "	 {adjust(); continue;}
+"/*"       		{adjust(); comment_nest++; BEGIN comment;}
+<comment>"/*" 	{adjust(); comment_nest++; BEGIN comment;}
+<comment>"*/"   {adjust(); comment_nest--; if(!comment_nest) BEGIN nocomment;}
+<comment>(.|\n) {adjust();}
+
+{ws}  {adjust();continue;} 
 \n	 {adjust(); EM_newline(); continue;}
 ","	 {adjust(); return COMMA;}
 ":=" {adjust(); return ASSIGN;}
@@ -115,26 +122,21 @@ of       {adjust(); return OF;}
 nil      {adjust(); return NIL;}
 {id}     {adjust(); yylval.sval = yytext ; return ID;} 
 {digits} {adjust(); yylval.ival=atoi(yytext); return INT;}
-"/*"       		{adjust(); comment_nest++; BEGIN COMMENT;}
-<COMMENT>"/*" 	{adjust(); comment_nest++;BEGIN COMMENT;}
-<COMMENT>"*/"   {adjust(); comment_nest--; if(!comment_nest) BEGIN 0;}
-<COMMENT>(.|\n) {adjust();}
 
-/*string*/
-\"    {adjust();init_string(); BEGIN STRING;}
-<STRING>{
+
+\"    {adjust();init_string(); BEGIN string;}/*string*/
+<string>{
 \\    		{adjust();append_char_to_string(0x5c);}
 "\\\""		{adjust(); append_char_to_string(0x22);}
 \\n			{adjust(); append_char_to_string(0x0A);}
 \\t			{adjust(); append_char_to_string(0x09);}
 
 \\[0-9]{3}  {adjust();append_char_to_string(atoi(yytext));}
-[ \t]+      {adjust();append_str_to_string(yytext);} 
+{ws}     {adjust();append_str_to_string(yytext);} 
 \n          {adjust();}
 [^\\" \t\n]+ {adjust();append_str_to_string(yytext);}
 \"     		{adjust(); end_string();yylval.sval = strdup(str);BEGIN 0; return STRING;}
 }
-/*else wrong characters*/
-.	 {adjust(); EM_error(EM_tokPos,"illegal token");}
 
-
+.	 {adjust(); EM_error(EM_tokPos,"illegal token");} /*else wrong characters*/
+%%
