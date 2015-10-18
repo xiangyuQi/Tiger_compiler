@@ -71,7 +71,7 @@ void end_string()
 
 id [A-Za-z][_A-Za-z0-9]*
 digits [0-9]+
-	
+%start COMMENT STRING
 %%
 " "	 {adjust(); continue;}
 \n	 {adjust(); EM_newline(); continue;}
@@ -115,7 +115,26 @@ of       {adjust(); return OF;}
 nil      {adjust(); return NIL;}
 {id}     {adjust(); yylval.sval = yytext ; return ID;} 
 {digits} {adjust(); yylval.ival=atoi(yytext); return INT;}
+"/*"       		{adjust(); comment_nest++; BEGIN COMMENT;}
+<COMMENT>"/*" 	{adjust(); comment_nest++;BEGIN COMMENT;}
+<COMMENT>"*/"   {adjust(); comment_nest--; if(!comment_nest) BEGIN 0;}
+<COMMENT>(.|\n) {adjust();}
 
+/*string*/
+\"    {adjust();init_string(); BEGIN STRING;}
+<STRING>{
+\\    		{adjust();append_char_to_string(0x5c);}
+"\\\""		{adjust(); append_char_to_string(0x22);}
+\\n			{adjust(); append_char_to_string(0x0A);}
+\\t			{adjust(); append_char_to_string(0x09);}
+
+\\[0-9]{3}  {adjust();append_char_to_string(atoi(yytext));}
+[ \t]+      {adjust();append_str_to_string(yytext);} 
+\n          {adjust();}
+[^\\" \t\n]+ {adjust();append_str_to_string(yytext);}
+\"     		{adjust(); end_string();yylval.sval = strdup(str);BEGIN 0; return STRING;}
+}
+/*else wrong characters*/
 .	 {adjust(); EM_error(EM_tokPos,"illegal token");}
 
 
