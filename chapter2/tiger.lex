@@ -70,16 +70,11 @@ void end_string()
 id [A-Za-z][_A-Za-z0-9]*
 digits [0-9]+
 ws[ \t]+
-%x comment
-%x string
-%s nocomment
+%start comment nocomment string
 
 %%
+<nocomment>{
 "/*"       		{adjust(); comment_nest++; BEGIN comment;}
-<comment>"/*" 	{adjust(); comment_nest++; BEGIN comment;}
-<comment>"*/"   {adjust(); comment_nest--; if(!comment_nest) BEGIN nocomment;}
-<comment>(.|\n) {adjust();}
-
 {ws}  {adjust();continue;} 
 \n	 {adjust(); EM_newline(); continue;}
 ","	 {adjust(); return COMMA;}
@@ -125,6 +120,8 @@ nil      {adjust(); return NIL;}
 
 
 \"    {adjust();init_string(); BEGIN string;}/*string*/
+.	     {adjust(); EM_error(EM_tokPos,"illegal token");}
+}
 <string>{
 \\    		{adjust();append_char_to_string(0x5c);}
 "\\\""		{adjust(); append_char_to_string(0x22);}
@@ -135,8 +132,10 @@ nil      {adjust(); return NIL;}
 {ws}     {adjust();append_str_to_string(yytext);} 
 \n          {adjust();}
 [^\\" \t\n]+ {adjust();append_str_to_string(yytext);}
-\"     		{adjust(); end_string();yylval.sval = strdup(str);BEGIN 0; return STRING;}
+\"     		{adjust(); end_string();yylval.sval = strdup(str);BEGIN nocomment; return STRING;}
 }
-
-.	 {adjust(); EM_error(EM_tokPos,"illegal token");} /*else wrong characters*/
+<comment>"/*" 	{adjust(); comment_nest++; BEGIN comment;}
+<comment>"*/"   {adjust(); comment_nest--; if(!comment_nest) BEGIN nocomment;}
+<comment>. {adjust();}
+.	                {BEGIN nocomment; yyless(0);}
 %%
