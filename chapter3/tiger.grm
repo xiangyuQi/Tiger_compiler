@@ -21,6 +21,13 @@ void yyerror(char *s)
 %token <sval> ID STRING
 %token <ival> INT
 
+%left ASSIGN
+%left AND OR
+%nonassoc EQ NEQ LT LE GT GE
+%left PLUS MINUS
+%left TIMES DIVIDE
+%right UMINUS
+
 %token 
   COMMA COLON SEMICOLON LPAREN RPAREN LBRACK RBRACK 
   LBRACE RBRACE DOT 
@@ -41,5 +48,49 @@ void yyerror(char *s)
 
 program:	exp
 
-exp:   ID
-
+exp:   lvalue
+	|  lvalue ASSIGN exp
+	|  NIL
+	|  LPAREN explist RPAREN
+	|  INT
+	|  STRING
+	|  MINUS exp %prec UMINUS
+	|  funcall
+	|  exp PLUS exp
+	|  exp MINUS exp
+	|  exp TIMES exp
+	|  exp DIVIDE exp
+	|  exp EQ exp
+	|  exp NEQ exp
+	|  exp LT exp
+	|  exp LE exp
+	|  exp GT exp
+	|  exp GE exp
+	|  exp AND exp
+	|  exp OR exp
+	|  record_cre
+	|  array
+	|  IF exp THEN exp ELSE exp
+	|  IF exp THEN exp 
+	|  WHILE exp DO exp
+	|  FOR ID ASSIGN exp TO exp DO exp
+	|  BREAK 
+	|  lET  decs IN explist END 
+	
+explist: exp SEMICOLON explist
+	|  exp
+	
+funcall: ID LBRACE RBRACE
+	|  ID LBRACE args RBRACE
+	
+args:  exp COMMA args
+	|  exp
+	
+record_cre: ID LBRACE RBRACE
+    |	 ID LBRACE recode_fields RBRACE
+	
+recode_fields : ID EQ exp COMMA recode_fields
+	|	ID EQ exp 
+	
+	
+	
