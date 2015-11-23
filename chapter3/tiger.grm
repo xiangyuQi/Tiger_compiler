@@ -46,9 +46,9 @@ void yyerror(char *s)
  *  to replace the two dummy productions below with an actual grammar. 
  */
 
-program:	exp
+program : exp
 
-exp:   lvalue
+exp :  lvalue
 	|  lvalue ASSIGN exp
 	|  NIL
 	|  LPAREN explist RPAREN
@@ -78,19 +78,50 @@ exp:   lvalue
 	|  lET  decs IN explist END 
 	
 explist: exp SEMICOLON explist
-	|  exp
+	   | exp
 	
 funcall: ID LBRACE RBRACE
-	|  ID LBRACE args RBRACE
+	   | ID LBRACE args RBRACE
 	
 args:  exp COMMA args
 	|  exp
 	
 record_cre: ID LBRACE RBRACE
-    |	 ID LBRACE recode_fields RBRACE
+		  |	ID LBRACE recode_fields RBRACE
 	
 recode_fields : ID EQ exp COMMA recode_fields
-	|	ID EQ exp 
+			  | ID EQ exp 
+
+decs : dec decs
+	 |
 	
+dec : tydec
+	| vardec
+	| funcdec
 	
+tydec : TYPE ID EQ ty
 	
+ty : ID
+   | LBRACE tyfields RBRACE
+   | ARRAY OF ID
+
+/*tyfields : tyfield tail_tyfields
+		   |
+	
+tail_tyfields : COMMA tyfield tail_tyfields
+			  |
+
+tyfield : ID COLON ID
+*/
+tyfields : ID COLON ID COMMA tyfields
+		 | ID COLON ID 
+	     |
+vardec : VAR ID ASSIGN EXP
+	   | VAR ID COLON ID ASSIGN exp
+		
+fundec : FUNCTION ID LPAREN tyfields RPAREN EQ exp
+	   | FUNCTION ID LPAREN tyfields RPAREN COLON ID EQ exp
+	
+lvalue : ID 
+	   | lvalue DOT ID 
+	   | lvalue LBRACE exp RBRACE
