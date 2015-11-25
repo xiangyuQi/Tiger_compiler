@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "util.h"
 #include "errormsg.h"
+#define YYDEBUG 1
 int yylex(void); /* function prototype */
 
 void yyerror(char *s)
@@ -25,6 +26,7 @@ void yyerror(char *s)
 %nonassoc EQ NEQ LT LE GT GE
 %left PLUS MINUS
 %left TIMES DIVIDE
+%right DO OF ELSE
 %right UMINUS
 
 %token 
