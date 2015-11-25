@@ -81,17 +81,19 @@ exp :  lvalue
 explist: exp SEMICOLON explist
 	   | exp
 	
-funcall: ID LPAREN RPAREN
+/*funcall: ID LPAREN RPAREN
 	   | ID LPAREN args RPAREN
-	
+*/
+funcall : ID LPAREN args RPAREN	
 args:  exp COMMA args
 	|  exp
+	|
 	
-record_cre: ID LBRACE RBRACE
-		  |	ID LBRACE recode_fields RBRACE
+record_cre: ID LBRACE recode_fields RBRACE
 	
 recode_fields : ID EQ exp COMMA recode_fields
 			  | ID EQ exp 
+			  |
 
 decs : dec decs
 	 |
