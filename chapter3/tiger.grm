@@ -21,13 +21,6 @@ void yyerror(char *s)
 %token <sval> ID STRING
 %token <ival> INT
 
-%left ASSIGN
-%left AND OR
-%nonassoc EQ NEQ LT LE GT GE
-%left PLUS MINUS
-%left TIMES DIVIDE
-%right UMINUS
-
 %token 
   COMMA COLON SEMICOLON LPAREN RPAREN LBRACK RBRACK 
   LBRACE RBRACE DOT 
@@ -46,82 +39,7 @@ void yyerror(char *s)
  *  to replace the two dummy productions below with an actual grammar. 
  */
 
-program : exp
+program:	exp
 
-exp :  lvalue
-	|  lvalue ASSIGN exp
-	|  NIL
-	|  LPAREN explist RPAREN
-	|  INT
-	|  STRING
-	|  MINUS exp %prec UMINUS
-	|  funcall
-	|  exp PLUS exp
-	|  exp MINUS exp
-	|  exp TIMES exp
-	|  exp DIVIDE exp
-	|  exp EQ exp
-	|  exp NEQ exp
-	|  exp LT exp
-	|  exp LE exp
-	|  exp GT exp
-	|  exp GE exp
-	|  exp AND exp
-	|  exp OR exp
-	|  record_cre
-	|  array
-	|  IF exp THEN exp ELSE exp
-	|  IF exp THEN exp 
-	|  WHILE exp DO exp
-	|  FOR ID ASSIGN exp TO exp DO exp
-	|  BREAK 
-	|  lET  decs IN explist END 
-	
-explist: exp SEMICOLON explist
-	   | exp
-	
-funcall: ID LBRACE RBRACE
-	   | ID LBRACE args RBRACE
-	
-args:  exp COMMA args
-	|  exp
-	
-record_cre: ID LBRACE RBRACE
-		  |	ID LBRACE recode_fields RBRACE
-	
-recode_fields : ID EQ exp COMMA recode_fields
-			  | ID EQ exp 
+exp:   ID
 
-decs : dec decs
-	 |
-	
-dec : tydec
-	| vardec
-	| funcdec
-	
-tydec : TYPE ID EQ ty
-	
-ty : ID
-   | LBRACE tyfields RBRACE
-   | ARRAY OF ID
-
-/*tyfields : tyfield tail_tyfields
-		   |
-	
-tail_tyfields : COMMA tyfield tail_tyfields
-			  |
-
-tyfield : ID COLON ID
-*/
-tyfields : ID COLON ID COMMA tyfields
-		 | ID COLON ID 
-	     |
-vardec : VAR ID ASSIGN EXP
-	   | VAR ID COLON ID ASSIGN exp
-		
-fundec : FUNCTION ID LPAREN tyfields RPAREN EQ exp
-	   | FUNCTION ID LPAREN tyfields RPAREN COLON ID EQ exp
-	
-lvalue : ID 
-	   | lvalue DOT ID 
-	   | lvalue LBRACE exp RBRACE
