@@ -117,7 +117,7 @@ explist: exp SEMICOLON explist {$$ = A_ExpList($1,$3);}
 	   | {$$ = NULL;}
 	   
 
-funcall : ID LPAREN args RPAREN	$$ = A_CallExp(EM_tokPos,S_Symbol($1),$3);}
+funcall : ID LPAREN args RPAREN	{$$ = A_CallExp(EM_tokPos,S_Symbol($1),$3);}
 
 args:  exp COMMA args {$$ = A_ExpList($1,$3);}
 	|  exp {$$= A_ExpList(EM_tokPos,$1,NULL); }
@@ -140,7 +140,8 @@ dec : nametylist  {$$ = $1;}
 
 nametylist  :namety nametylist {$$ = A_NametyList($1,$2);}
 			| namety	{$$ = A_NametyList($1,NULL);}
-namety : TYPE ID EQ ty {$$ = A_Namety(S_Symbol($1),$4);}
+			
+namety : TYPE ID EQ ty {$$ = A_Namety(S_Symbol($2),$4);}
 	
 ty : ID			{$$ = A_NameTy(EM_tokPos,S_Symbol($1),NULL);}
    | LBRACE fieldlist RBRACE {$$ = A_RecordTy(EM_tokPos,$2);}
@@ -153,10 +154,10 @@ fieldlist : field COMMA fieldlist {$$ = A_FieldList($1,$3);}
 field : ID COLON ID  {$$ = Field(EM_tokPos,S_Symbol($1),S_Symbol($3));}
       | {$$ = NULL;}
 		 
-vardec : VAR ID ASSIGN exp  {$$ = A_VarDec(EM_tokPos,S_Symbol($1),NULL,$4);}
-	   | VAR ID COLON ID ASSIGN exp {$$ = A_VarDec(EM_tokPos,S_Symbol($1),S_Symbol($2),$4);}
+vardec : VAR ID ASSIGN exp  {$$ = A_VarDec(EM_tokPos,S_Symbol($2),NULL,$4);}
+	   | VAR ID COLON ID ASSIGN exp {$$ = A_VarDec(EM_tokPos,S_Symbol($2),S_Symbol($2),$4);}
 	   
-fundeclist : fundec fundecs {$$ = A_FundecList($1,$2);}
+fundeclist : fundec fundeclist {$$ = A_FundecList($1,$2);}
 	   |  fundec  {$$ = A_FundecList($1,NULL);}
 	   
 fundec : FUNCTION ID LPAREN fieldlist RPAREN EQ exp {$$ = A_Fundec(EM_tokPos,S_Symbol($2),$4,NULL,$7);}
