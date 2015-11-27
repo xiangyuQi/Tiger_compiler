@@ -1,0 +1,169 @@
+%{
+#include <stdio.h>
+#include "util.h"
+#include "symbol.h" 
+#include "errormsg.h"
+#include "absyn.h"
+
+#define YYDEBUG 1
+int yylex(void); /* function prototype */
+A_exp absyn_root;
+void yyerror(char *s)
+{
+ EM_error(EM_tokPos, "%s", s);
+}
+%}
+
+
+%union {
+	int pos;
+	int ival;
+	double dval;
+	string sval;
+	A_var var;
+	A_exp exp;
+	A_expList explist;
+	A_efield efiled;
+	A_efieldList efieldlist;
+	A_dec dec;
+	A_decList declist;
+	A_namety namety;
+	A_fundec fundec;
+	A_ty ty;
+	A_field field;
+	A_fieldList fieldlist;
+	}
+
+%token <sval> ID STRING
+%token <ival> INT
+%token <dval> DOUBLE
+
+%left ASSIGN
+%left AND OR
+%nonassoc EQ NEQ LT LE GT GE
+%left PLUS MINUS
+%left TIMES DIVIDE
+%right DO OF ELSE
+%right UMINUS
+
+%token 
+  COMMA COLON SEMICOLON LPAREN RPAREN LBRACK RBRACK 
+  LBRACE RBRACE DOT 
+  PLUS MINUS TIMES DIVIDE EQ NEQ LT LE GT GE
+  AND OR ASSIGN
+  ARRAY IF THEN ELSE WHILE FOR TO DO LET IN END OF 
+  BREAK NIL
+  FUNCTION VAR TYPE 
+
+%type <exp> exp program seq funcall record_cre array
+%type <var>	lvalue
+%type <explist> explist args
+%type <efiled> efiled
+%type <efieldlist> efieldlist
+%type <dec> dec nametylist fundeclist vardec
+%type <declist> declist
+%type <namety> namety
+%type <fundec> fundec
+%type <ty> ty
+%type <field> field
+%type <fieldlist> fieldlist
+
+/* et cetera */
+  
+%start program
+
+%%
+
+/* This is a skeleton grammar file, meant to illustrate what kind of
+ * declarations are necessary above the %% mark.  Students are expected
+ *  to replace the two dummy productions below with an actual grammar. 
+ */
+
+program : exp {absyn_root = $1;}
+
+exp :  lvalue {$$ = A_VarExp(EM_tokPos,$1);}
+	|  lvalue ASSIGN exp { $$ = A_AssignExp(EM_tokPos,$1,$3);}
+	|  NIL	{$$ = A_NilExp(EM_tokPos);}
+	|  seq  {$$ = $1;}
+	|  INT  {$$ = A_IntExp(EM_tokPos,$1);}
+	|  STRING {$$ = A_StringExp(EM_tokPos,$1);}
+	|  MINUS exp %prec UMINUS {$$ = A_OpExp(EM_tokPos,A_minusOp,A_IntExp(EM_tokPos,0),$2);}
+	|  funcall {$$ = $1;}
+	|  exp PLUS exp {$$ = A_OpExp(EM_tokPos, A_plusOp, $1, $3);} 
+	|  exp MINUS exp {$$ = A_OpExp(EM_tokPos, A_minusOp, $1, $3);} 
+	|  exp TIMES exp {$$ = A_OpExp(EM_tokPos, A_timesOp, $1, $3);} 
+	|  exp DIVIDE exp {$$ = A_OpExp(EM_tokPos, A_divideOp, $1, $3);} 
+	|  exp EQ exp {$$ = A_OpExp(EM_tokPos, A_eqOp, $1, $3);} 
+	|  exp NEQ exp {$$ = A_OpExp(EM_tokPos, A_neqOp, $1, $3);} 
+	|  exp LT exp {$$ = A_OpExp(EM_tokPos, A_ltOp, $1, $3);} 
+	|  exp LE exp {$$ = A_OpExp(EM_tokPos, A_leOp, $1, $3);} 
+	|  exp GT exp {$$ = A_OpExp(EM_tokPos, A_gtOp, $1, $3);} 
+	|  exp GE exp {$$ = A_OpExp(EM_tokPos, A_geOp, $1, $3);} 
+	|  exp AND exp {$$ = A_IfExp(EM_tokPos,$1,$3,A_IntExp(EM_tokPos,0));}
+	|  exp OR exp  {$$ = A_IfExp(EM_tokPos,$1,A_IntExp(EM_tokPos,1),$3);}
+	|  record_cre {$$ = $1;}
+	|  array	  {$$ = $1;}	
+	|  IF exp THEN exp ELSE exp {$$ = A_IfExp(EM_tokPos,$2,$4,$6);}
+    |  IF exp THEN exp	{$$ = A_IfExp(EM_tokPos,$2,$4,NULL);}
+	|  WHILE exp DO exp {$$ = A_WhileExp(EM_tokPos,$2,$4);}
+	|  FOR ID ASSIGN exp TO exp DO exp {$$ = A_ForExp(EM_tokPos,$2,$4,$6,$8);}
+	|  BREAK  {$$ = A_BreakExp(EM_tokPos);} 
+	|  LET declist IN explist END  { $$ = A_LetExp(EM_tokPos,$2,A_SeqExp(EM_tokPos,$4));}
+
+seq : LPAREN explist RPAREN {$$ = A_SeqExp(EM_tokPos,$2);}
+
+explist: exp SEMICOLON explist {$$ = A_ExpList($1,$3);}
+	   | exp {$$ = A_ExpList($1,NULL);}
+	   | {$$ = NULL;}
+	   
+
+funcall : ID LPAREN args RPAREN	$$ = A_CallExp(EM_tokPos,S_Symbol($1),$3);}
+
+args:  exp COMMA args {$$ = A_ExpList($1,$3);}
+	|  exp {$$= A_ExpList(EM_tokPos,$1,NULL); }
+	|  {$$ =NULL;}
+	
+record_cre: ID LBRACE efieldlist RBRACE {$$ = A_RecordExp(EM_tokPos,S_Symbol($1),$3);}
+	
+efieldlist : efiled COMMA efieldlist {$$ = A_EfieldList($1,$3);}
+			  | efiled  {$$ = A_EfieldList($1,NULL);}
+			  | {$$ =NULL;}
+			  
+efiled :  ID EQ exp {$$ = A_Efield(S_Symbol(E$1),$3);}
+
+declist : dec declist {$$ = A_DecList($1,$2);}
+	 |	{$$ = NULL;}
+	
+dec : nametylist  {$$ = $1;} 
+	| vardec   {$$ = $1;}
+	| fundeclist {$$ = $1;}
+
+nametylist  :namety nametylist {$$ = A_NametyList($1,$2);}
+			| namety	{$$ = A_NametyList($1,NULL);}
+namety : TYPE ID EQ ty {$$ = A_Namety(S_Symbol($1),$4);}
+	
+ty : ID			{$$ = A_NameTy(EM_tokPos,S_Symbol($1),NULL);}
+   | LBRACE fieldlist RBRACE {$$ = A_RecordTy(EM_tokPos,$2);}
+   | ARRAY OF ID {$$ = A_ArrayTy(EM_tokPos,S_Symbol($3));}
+
+
+fieldlist : field COMMA fieldlist {$$ = A_FieldList($1,$3);}
+		 | field {$$ = A_FieldList($1,NULL);}
+		 
+field : ID COLON ID  {$$ = Field(EM_tokPos,S_Symbol($1),S_Symbol($3));}
+      | {$$ = NULL;}
+		 
+vardec : VAR ID ASSIGN exp  {$$ = A_VarDec(EM_tokPos,S_Symbol($1),NULL,$4);}
+	   | VAR ID COLON ID ASSIGN exp {$$ = A_VarDec(EM_tokPos,S_Symbol($1),S_Symbol($2),$4);}
+	   
+fundeclist : fundec fundecs {$$ = A_FundecList($1,$2);}
+	   |  fundec  {$$ = A_FundecList($1,NULL);}
+	   
+fundec : FUNCTION ID LPAREN fieldlist RPAREN EQ exp {$$ = A_Fundec(EM_tokPos,S_Symbol($2),$4,NULL,$7);}
+	   | FUNCTION ID LPAREN fieldlist RPAREN COLON ID EQ exp {$$ = A_Fundec(EM_tokPos,S_Symbol($2),$4,S_Symbol($7),$9);}
+	
+lvalue : ID   {$$ = A_SimplerVar(EM_tokPos,S_Symbol($1));}
+	   | lvalue DOT ID {$$ = A_FieldVar(EM_tokPos,$1,S_Symbol($3));}
+	   | lvalue LBRACK exp RBRACK {$$ = A_SubscriptVar(EM_tokPos,$1,$3);}
+	
+array : ID LBRACK exp RBRACK OF exp {$$ = A_ArrayExp(EM_tokPos,S_Symbol($1),$3,$6);}

@@ -52,11 +52,11 @@ program : exp
 exp :  lvalue
 	|  lvalue ASSIGN exp
 	|  NIL
-	|  LPAREN explist RPAREN
+	|  seq
 	|  INT
 	|  STRING
 	|  MINUS exp %prec UMINUS
-	|  funcall
+	|  funcal
 	|  exp PLUS exp
 	|  exp MINUS exp
 	|  exp TIMES exp
@@ -72,19 +72,21 @@ exp :  lvalue
 	|  record_cre
 	|  array
 	|  IF exp THEN exp ELSE exp
-	|  IF exp THEN exp 
+	|  IF exp THEN exp
+
 	|  WHILE exp DO exp
 	|  FOR ID ASSIGN exp TO exp DO exp
 	|  BREAK 
 	|  LET decs IN explist END 
+
+seq : LPAREN explist RPAREN
 	
 explist: exp SEMICOLON explist
 	   | exp
 	
-/*funcall: ID LPAREN RPAREN
-	   | ID LPAREN args RPAREN
-*/
-funcall : ID LPAREN args RPAREN	
+
+funcal : ID LPAREN args RPAREN	
+
 args:  exp COMMA args
 	|  exp
 	|
