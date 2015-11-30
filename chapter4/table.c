@@ -5,6 +5,9 @@
 
 #include <stdio.h>
 #include "util.h"
+//#include "symbol.h"
+//#include "types.h"
+//#include "env.h"
 #include "table.h"
 
 #define TABSIZE 127
@@ -22,7 +25,7 @@ static binder Binder(void *key, void *value, binder next, void *prevtop)
  b->key = key; b->value=value; b->next=next; b->prevtop = prevtop; 
  return b;
 }
-
+/* create a new S_table (author named is terrible) */
 TAB_table TAB_empty(void)
 { 
  TAB_table t = checked_malloc(sizeof(*t));
@@ -62,9 +65,9 @@ void *TAB_look(TAB_table t, void *key)
 
 void *TAB_pop(TAB_table t) {
   void *k; binder b; int index;
-  assert (t);
+  assert (t); /*table shoud has mem*/
   k = t->top;
-  assert (k);
+  assert (k); /*init table should not pop*/ 
   index = ((unsigned)k) % TABSIZE;
   b = t->table[index];
   assert(b);
@@ -86,3 +89,55 @@ void TAB_dump(TAB_table t, void (*show)(void *key, void *value)) {
   t->top=k;
   t->table[index]=b;
 }
+/*
+void TAB_show_tenv(TAB_table t) {
+	if (!t) {
+		puts("empty table");
+		return;
+	}
+	binder * i = t->table;
+	for (; i < &t->table[TABSIZE]; i++) {
+		if (*i) {
+			char * s = "";
+			char ext = '\0';
+			Ty_ty tmp = (Ty_ty)(*i)->value;
+			if (tmp) {
+			printf("%d", tmp->kind);  	
+			switch (tmp->kind) {
+			case Ty_record:
+				s = "reocord";
+				break;
+			case Ty_array:
+				s = "arrry of";
+				ext = '0' + tmp->u.array->kind;
+				break;
+			case Ty_int:
+				s = "int";
+				break;
+			case Ty_string:
+				s = "string";
+				break;
+			case Ty_nil:
+				s = "nil";
+				break;
+			case Ty_void:
+				s = "void";
+				break;
+			case Ty_name:
+				s = S_name(tmp->u.name.sym);
+				break;
+			case Ty_double:
+				s = "double";
+				break;
+			}
+			
+		}
+		printf("%s => %s %c\n", S_name((S_symbol)(*i)->key), s, ext);	
+		}
+	}
+}
+
+void TAB_show_venv(TAB_table v) {
+	
+}
+*/
