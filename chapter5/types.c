@@ -92,4 +92,15 @@ void TyList_print(Ty_tyList list)
     printf(")");
   }
 }
+int Ty_is_compatible(Ty_ty ty1, Ty_ty ty2)
+{
+  if (ty1 == ty2) {
+    return 1;
+  } else if ((ty1->kind == Ty_record && ty2->kind == Ty_nil) || 
+             (ty1->kind == Ty_nil && ty2->kind == Ty_record)) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
 
